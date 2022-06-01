@@ -27,6 +27,7 @@ import com.yandex.mapkit.map.PointOfView;
 import com.yandex.mapkit.map.CameraUpdateReason;
 import com.yandex.mapkit.map.CameraListener;
 import com.yandex.mapkit.mapview.MapView;
+import com.yandex.mapkit.traffic.TrafficLayer;
 import com.yandex.mapkit.user_location.UserLocationLayer;
 import com.yandex.mapkit.user_location.UserLocationObjectListener;
 import com.yandex.mapkit.user_location.UserLocationView;
@@ -458,6 +459,11 @@ public class YandexMapController implements
   @SuppressWarnings({"unchecked", "ConstantConditions"})
   private void applyMapOptions(Map<String, Object> params) {
     com.yandex.mapkit.map.Map map = mapView.getMap();
+
+    if (params.get("jamsEnabled") != null) {
+      TrafficLayer traffic = MapKitFactory.getInstance().createTrafficLayer(mapView.getMapWindow());
+      traffic.setTrafficVisible((Boolean) params.get("jamsEnabled"));
+    }
 
     if (params.get("tiltGesturesEnabled") != null) {
       map.setTiltGesturesEnabled((Boolean) params.get("tiltGesturesEnabled"));
