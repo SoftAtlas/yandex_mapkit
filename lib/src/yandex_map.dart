@@ -15,30 +15,32 @@ class AndroidYandexMap {
 /// A widget which displays a map using Yandex maps service.
 class YandexMap extends StatefulWidget {
   /// A `Widget` for displaying Yandex Map
-  const YandexMap(
-      {Key? key,
-      this.gestureRecognizers = const <Factory<OneSequenceGestureRecognizer>>{},
-      this.mapObjects = const [],
-      this.tiltGesturesEnabled = true,
-      this.zoomGesturesEnabled = true,
-      this.rotateGesturesEnabled = true,
-      this.scrollGesturesEnabled = true,
-      this.modelsEnabled = true,
-      this.jamsEnabled = false,
-      this.nightModeEnabled = false,
-      this.fastTapEnabled = false,
-      this.mode2DEnabled = false,
-      this.indoorEnabled = false,
-      this.liteModeEnabled = false,
-      this.logoAlignment = const MapAlignment(
-          horizontal: HorizontalAlignment.right, vertical: VerticalAlignment.bottom),
-      this.screenRect,
-      this.onMapCreated,
-      this.onMapTap,
-      this.onMapLongTap,
-      this.onUserLocationAdded,
-      this.onCameraPositionChanged})
-      : super(key: key);
+  const YandexMap({
+    Key? key,
+    this.gestureRecognizers = const <Factory<OneSequenceGestureRecognizer>>{},
+    this.mapObjects = const [],
+    this.tiltGesturesEnabled = true,
+    this.zoomGesturesEnabled = true,
+    this.rotateGesturesEnabled = true,
+    this.scrollGesturesEnabled = true,
+    this.modelsEnabled = true,
+    this.nightModeEnabled = false,
+    this.fastTapEnabled = false,
+    this.mode2DEnabled = false,
+    this.indoorEnabled = false,
+    this.liteModeEnabled = false,
+    this.logoAlignment = const MapAlignment(horizontal: HorizontalAlignment.right, vertical: VerticalAlignment.bottom),
+    this.focusRect,
+    this.onMapCreated,
+    this.onMapTap,
+    this.onMapLongTap,
+    this.onUserLocationAdded,
+    this.onCameraPositionChanged,
+    this.onTrafficChanged,
+    this.mapType = MapType.vector,
+    this.poiLimit,
+    this.onObjectTap
+  }) : super(key: key);
 
   static const String _viewType = 'yandex_mapkit/yandex_map';
 
@@ -79,9 +81,6 @@ class YandexMap extends StatefulWidget {
   /// Enables indoor plans on the map.
   final bool indoorEnabled;
 
-  /// Enables jams.
-  final bool jamsEnabled;
-
   /// Enables lite rendering mode.
   final bool liteModeEnabled;
 
@@ -93,7 +92,7 @@ class YandexMap extends StatefulWidget {
 
   /// Allows to set map focus to a certain rectangle instead of the whole map
   /// For more info refer to https://yandex.com/dev/maps/mapkit/doc/ios-ref/full/Classes/YMKMapWindow.html#focusRect
-  final ScreenRect? screenRect;
+  final ScreenRect? focusRect;
 
   /// Callback method for when the map is ready to be used.
   ///
@@ -119,6 +118,19 @@ class YandexMap extends StatefulWidget {
   /// This is called only once when the layer is made visible for the first time
   final UserLocationCallback? onUserLocationAdded;
 
+  /// Callback to be called where a change has occured in traffic layer.
+  final TrafficChangedCallback? onTrafficChanged;
+
+  /// Selects one of predefined map style modes optimized for particular use case(transit, driving, etc).
+  /// Resets json styles set with [YandexMapController.setMapStyle].
+  final MapType mapType;
+
+  /// Limits the number of visible basemap POIs
+  final int? poiLimit;
+
+  /// Called every time a [YandexMap] geo object is tapped.
+  final ObjectTapCallback? onObjectTap;
+
   @override
   _YandexMapState createState() => _YandexMapState();
 }
@@ -127,8 +139,10 @@ class _YandexMapState extends State<YandexMap> {
   late _YandexMapOptions _yandexMapOptions;
 
   /// Root object which contains all [MapObject] which were added to the map by user
-  MapObjectCollection _mapObjectCollection =
-      MapObjectCollection(mapId: MapObjectId('root_map_object_collection'), mapObjects: []);
+  MapObjectCollection _mapObjectCollection = MapObjectCollection(
+    mapId: MapObjectId('root_map_object_collection'),
+    mapObjects: []
+  );
 
   /// All [MapObject] which were created natively
   ///
@@ -194,27 +208,28 @@ class _YandexMapState extends State<YandexMap> {
     if (defaultTargetPlatform == TargetPlatform.android) {
       if (AndroidYandexMap.useAndroidViewSurface) {
         return PlatformViewLink(
-            viewType: YandexMap._viewType,
-            surfaceFactory: (BuildContext context, PlatformViewController controller) {
-              return AndroidViewSurface(
-                controller: controller as AndroidViewController,
-                gestureRecognizers: widget.gestureRecognizers,
-                hitTestBehavior: PlatformViewHitTestBehavior.opaque,
-              );
-            },
-            onCreatePlatformView: (PlatformViewCreationParams params) {
-              return PlatformViewsService.initSurfaceAndroidView(
-                id: params.id,
-                viewType: YandexMap._viewType,
-                layoutDirection: TextDirection.ltr,
-                creationParams: _creationParams(),
-                creationParamsCodec: StandardMessageCodec(),
-                onFocus: () => params.onFocusChanged(true),
-              )
-                ..addOnPlatformViewCreatedListener(params.onPlatformViewCreated)
-                ..addOnPlatformViewCreatedListener(_onPlatformViewCreated)
-                ..create();
-            });
+          viewType: YandexMap._viewType,
+          surfaceFactory: (BuildContext context, PlatformViewController controller) {
+            return AndroidViewSurface(
+              controller: controller as AndroidViewController,
+              gestureRecognizers: widget.gestureRecognizers,
+              hitTestBehavior: PlatformViewHitTestBehavior.opaque,
+            );
+          },
+          onCreatePlatformView: (PlatformViewCreationParams params) {
+            return PlatformViewsService.initSurfaceAndroidView(
+              id: params.id,
+              viewType: YandexMap._viewType,
+              layoutDirection: TextDirection.ltr,
+              creationParams: _creationParams(),
+              creationParamsCodec: StandardMessageCodec(),
+              onFocus: () => params.onFocusChanged(true),
+            )
+            ..addOnPlatformViewCreatedListener(params.onPlatformViewCreated)
+            ..addOnPlatformViewCreatedListener(_onPlatformViewCreated)
+            ..create();
+          }
+        );
       } else {
         return AndroidView(
           viewType: YandexMap._viewType,
@@ -248,58 +263,65 @@ class _YandexMapState extends State<YandexMap> {
   Map<String, dynamic> _creationParams() {
     final mapOptions = _yandexMapOptions.toJson();
     final mapObjects = MapObjectUpdates.from(
-        {_mapObjectCollection.copyWith(mapObjects: [])}, {_mapObjectCollection}).toJson();
+      {_mapObjectCollection.copyWith(mapObjects: [])},
+      {_mapObjectCollection}
+    ).toJson();
 
-    return {'mapOptions': mapOptions, 'mapObjects': mapObjects};
+    return {
+      'mapOptions': mapOptions,
+      'mapObjects': mapObjects
+    };
   }
 }
 
 /// Configuration options for the YandexMap native view.
 class _YandexMapOptions {
-  _YandexMapOptions.fromWidget(YandexMap map)
-      : tiltGesturesEnabled = map.tiltGesturesEnabled,
-        zoomGesturesEnabled = map.zoomGesturesEnabled,
-        rotateGesturesEnabled = map.rotateGesturesEnabled,
-        scrollGesturesEnabled = map.scrollGesturesEnabled,
-        modelsEnabled = map.modelsEnabled,
-        nightModeEnabled = map.nightModeEnabled,
-        fastTapEnabled = map.fastTapEnabled,
-        mode2DEnabled = map.mode2DEnabled,
-        indoorEnabled = map.indoorEnabled,
-        liteModeEnabled = map.liteModeEnabled,
-        logoAlignment = map.logoAlignment,
-        screenRect = map.screenRect,
-        jamsEnabled = map.jamsEnabled;
+  _YandexMapOptions.fromWidget(YandexMap map) :
+    tiltGesturesEnabled = map.tiltGesturesEnabled,
+    zoomGesturesEnabled = map.zoomGesturesEnabled,
+    rotateGesturesEnabled = map.rotateGesturesEnabled,
+    scrollGesturesEnabled = map.scrollGesturesEnabled,
+    modelsEnabled = map.modelsEnabled,
+    nightModeEnabled = map.nightModeEnabled,
+    fastTapEnabled = map.fastTapEnabled,
+    mode2DEnabled = map.mode2DEnabled,
+    indoorEnabled = map.indoorEnabled,
+    liteModeEnabled = map.liteModeEnabled,
+    logoAlignment = map.logoAlignment,
+    focusRect = map.focusRect,
+    mapType = map.mapType,
+    poiLimit = map.poiLimit;
 
-  final bool jamsEnabled;
+    final bool tiltGesturesEnabled;
 
-  final bool tiltGesturesEnabled;
+    final bool zoomGesturesEnabled;
 
-  final bool zoomGesturesEnabled;
+    final bool rotateGesturesEnabled;
 
-  final bool rotateGesturesEnabled;
+    final bool nightModeEnabled;
 
-  final bool nightModeEnabled;
+    final bool scrollGesturesEnabled;
 
-  final bool scrollGesturesEnabled;
+    final bool fastTapEnabled;
 
-  final bool fastTapEnabled;
+    final bool mode2DEnabled;
 
-  final bool mode2DEnabled;
+    final bool indoorEnabled;
 
-  final bool indoorEnabled;
+    final bool liteModeEnabled;
 
-  final bool liteModeEnabled;
+    final bool modelsEnabled;
 
-  final bool modelsEnabled;
+    final MapAlignment logoAlignment;
 
-  final MapAlignment logoAlignment;
+    final ScreenRect? focusRect;
 
-  final ScreenRect? screenRect;
+    final MapType mapType;
+
+    final int? poiLimit;
 
   Map<String, dynamic> toJson() {
     return <String, dynamic>{
-      'jamsEnabled': jamsEnabled,
       'tiltGesturesEnabled': tiltGesturesEnabled,
       'zoomGesturesEnabled': zoomGesturesEnabled,
       'rotateGesturesEnabled': rotateGesturesEnabled,
@@ -311,14 +333,15 @@ class _YandexMapOptions {
       'liteModeEnabled': liteModeEnabled,
       'modelsEnabled': modelsEnabled,
       'logoAlignment': logoAlignment.toJson(),
-      'screenRect': screenRect?.toJson()
+      'focusRect': focusRect?.toJson(),
+      'mapType': mapType.index,
+      'poiLimit': poiLimit
     };
   }
 
   Map<String, dynamic> mapUpdates(_YandexMapOptions newOptions) {
     final prevOptionsMap = toJson();
 
-    return newOptions.toJson()
-      ..removeWhere((String key, dynamic value) => prevOptionsMap[key] == value);
+    return newOptions.toJson()..removeWhere((String key, dynamic value) => prevOptionsMap[key] == value);
   }
 }
