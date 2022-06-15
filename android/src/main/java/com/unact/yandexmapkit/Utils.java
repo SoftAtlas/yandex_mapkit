@@ -8,6 +8,7 @@ import com.yandex.mapkit.RequestPointType;
 import com.yandex.mapkit.ScreenPoint;
 import com.yandex.mapkit.ScreenRect;
 import com.yandex.mapkit.directions.driving.DrivingOptions;
+import com.yandex.mapkit.directions.driving.JamSegment;
 import com.yandex.mapkit.geometry.BoundingBox;
 import com.yandex.mapkit.geometry.Circle;
 import com.yandex.mapkit.geometry.Geometry;
@@ -240,6 +241,14 @@ public class Utils {
     circleMap.put("radius", (double) circle.getRadius());
 
     return circleMap;
+  }
+
+  public static Map<String, Object> jamSegmentToJson(JamSegment jam) {
+    Map<String, Object> result = new HashMap<>();
+    result.put("jamType", jam.getJamType().toString());
+    result.put("speed", jam.getSpeed());
+
+    return result;
   }
 
   public static Map<String, Object> linearRingToJson(LinearRing linearRing) {

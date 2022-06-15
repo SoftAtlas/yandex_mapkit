@@ -4,6 +4,7 @@ import androidx.annotation.NonNull;
 
 import com.yandex.mapkit.directions.driving.DrivingRoute;
 import com.yandex.mapkit.directions.driving.DrivingSession;
+import com.yandex.mapkit.directions.driving.JamSegment;
 import com.yandex.mapkit.directions.driving.Weight;
 import com.yandex.mapkit.geometry.Point;
 import com.yandex.runtime.Error;
@@ -29,8 +30,12 @@ public class YandexDrivingListener implements DrivingSession.DrivingRouteListene
     List<Map<String, Object>> resultRoutes = new ArrayList<>();
     for (DrivingRoute route : list) {
       List<Map<String, Double>> resultPoints = new ArrayList<>();
+      List<Map<String, Object>> jamsSegments = new ArrayList<>();
       for (Point point : route.getGeometry().getPoints()) {
         resultPoints.add(Utils.pointToJson(point));
+      }
+      for (JamSegment jam : route.getJamSegments()) {
+        jamsSegments.add(Utils.jamSegmentToJson(jam));
       }
 
       Weight weight = route.getMetadata().getWeight();
@@ -44,6 +49,8 @@ public class YandexDrivingListener implements DrivingSession.DrivingRouteListene
       Map<String, Object> resultRoute = new HashMap<>();
       resultRoute.put("geometry", resultPoints);
       resultRoute.put("metadata", resultMetadata);
+      resultRoute.put("speedLimits", route.getSpeedLimits());
+      resultRoute.put("jamSegments", jamsSegments);
 
       resultRoutes.add(resultRoute);
     }

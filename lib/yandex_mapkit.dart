@@ -47,6 +47,7 @@ part 'src/types/map_rect.dart';
 part 'src/types/map_type.dart';
 part 'src/types/screen_rect.dart';
 part 'src/types/traffic_level.dart';
+part 'src/types/jam_segment.dart';
 part 'src/types/search/search_address.dart';
 part 'src/types/search/search_component_kind.dart';
 part 'src/types/search/search_item.dart';
