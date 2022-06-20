@@ -16,14 +16,40 @@ class DrivingRoute extends Equatable {
   /// Jam Segment
   final List<JamSegment> jamSegments;
 
-  const DrivingRoute._(this.geometry, this.metadata, this.speedLimits, this.jamSegments);
+  const DrivingRoute._(
+      this.geometry, this.metadata, this.speedLimits, this.jamSegments);
 
   factory DrivingRoute._fromJson(Map<dynamic, dynamic> json) {
+    // print('speed limit');
+    // print((json['speedLimits'] as List).length);
+    // print(json['speedLimits']);
+    // print('jam segments');
+    // print((json['jamSegments'] as List).length);
+    // print(json['jamSegments']);
+    // print('geometry');
+    // print(json['geometry']);
+    // print((json['geometry'] as List).length);
+
+    final speedLimits = <double>[];
+
+    for (final limit in (json['speedLimits'] as List?) ?? []) {
+      try {
+        speedLimits.add(double.parse(limit.toString()));
+      } catch (e) {
+        speedLimits.add(0);
+      }
+    }
+
     return DrivingRoute._(
-      json['geometry'].map<Point>((dynamic resultPoint) => Point._fromJson(resultPoint)).toList(),
+      json['geometry']
+          .map<Point>((dynamic resultPoint) => Point._fromJson(resultPoint))
+          .toList(),
       DrivingSectionMetadata._fromJson(json['metadata']),
-      ((json['speedLimits'] as List?) ?? []).map((e) => double.parse(e.toString())).toList(),
-      json['jamSegments'].map<JamSegment>((dynamic jamSegment) => JamSegment._fromJson(jamSegment)).toList(),
+      speedLimits,
+      json['jamSegments']
+          .map<JamSegment>(
+              (dynamic jamSegment) => JamSegment._fromJson(jamSegment))
+          .toList(),
     );
   }
 
