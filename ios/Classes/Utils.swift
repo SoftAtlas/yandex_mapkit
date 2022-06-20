@@ -173,6 +173,35 @@ class Utils {
     ]
   }
 
+  static func jamSegmentToJson(_ jam: YMKDrivingJamSegment) -> [String: Any] {
+      var result = "";
+      
+      switch(jam.jamType.rawValue) {
+        case 1:
+          result = "BLOCKED";
+          break;
+        case 2:
+          result = "FREE";
+          break;
+        case 3:
+          result = "LIGHT";
+          break;
+        case 4:
+          result = "HARD";
+          break;
+        case 5:
+          result = "VERY_HARD";
+          break;
+        default:
+          result = "UNKNOWN";
+      }
+      
+    return [
+        "jamType": result,
+        "speed": String(describing: jam.speed),
+    ]
+  }
+
   static func linearRingToJson(_ linearRing: YMKLinearRing) -> [String: Any] {
     return [
       "points": linearRing.points.map({ pointToJson($0) })

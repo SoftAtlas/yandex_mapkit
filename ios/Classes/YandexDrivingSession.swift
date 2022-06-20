@@ -75,6 +75,10 @@ public class YandexDrivingSession: NSObject {
         "geometry": route.geometry.points.map {
           (point) -> [String: Any] in Utils.pointToJson(point)
         },
+        "jamSegments": route.jamSegments.map {
+            (jamSegment) -> [String: Any] in Utils.jamSegmentToJson(jamSegment)
+          },
+        "speedLimits": route.speedLimits,
         "metadata": [
           "weight": [
             "time": Utils.localizedValueToJson(weight.time),
