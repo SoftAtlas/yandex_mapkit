@@ -22,7 +22,7 @@ class DrivingRoute extends Equatable {
     return DrivingRoute._(
       json['geometry'].map<Point>((dynamic resultPoint) => Point._fromJson(resultPoint)).toList(),
       DrivingSectionMetadata._fromJson(json['metadata']),
-      (json['speedLimits'] as List).map((e) => double.parse(e.toString())).toList(),
+      ((json['speedLimits'] as List?) ?? []).map((e) => double.parse(e.toString())).toList(),
       json['jamSegments'].map<JamSegment>((dynamic jamSegment) => JamSegment._fromJson(jamSegment)).toList(),
     );
   }
