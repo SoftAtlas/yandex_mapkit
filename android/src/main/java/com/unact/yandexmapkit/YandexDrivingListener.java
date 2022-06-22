@@ -29,11 +29,7 @@ public class YandexDrivingListener implements DrivingSession.DrivingRouteListene
   public void onDrivingRoutes(@NonNull List<DrivingRoute> list) {
     List<Map<String, Object>> resultRoutes = new ArrayList<>();
     for (DrivingRoute route : list) {
-      List<Map<String, Double>> resultPoints = new ArrayList<>();
       List<Map<String, Object>> jamsSegments = new ArrayList<>();
-      for (Point point : route.getGeometry().getPoints()) {
-        resultPoints.add(Utils.pointToJson(point));
-      }
       for (JamSegment jam : route.getJamSegments()) {
         jamsSegments.add(Utils.jamSegmentToJson(jam));
       }
@@ -47,7 +43,7 @@ public class YandexDrivingListener implements DrivingSession.DrivingRouteListene
       resultMetadata.put("weight", resultWeight);
 
       Map<String, Object> resultRoute = new HashMap<>();
-      resultRoute.put("geometry", resultPoints);
+      resultRoute.put("polyline", Utils.polylineToJson(route.getGeometry()));
       resultRoute.put("metadata", resultMetadata);
       resultRoute.put("speedLimits", route.getSpeedLimits());
       resultRoute.put("jamSegments", jamsSegments);
@@ -63,19 +59,6 @@ public class YandexDrivingListener implements DrivingSession.DrivingRouteListene
 
   @Override
   public void onDrivingRoutesError(@NonNull Error error) {
-    String errorMessage = "Unknown error";
-
-    if (error instanceof NetworkError) {
-      errorMessage = "Network error";
-    }
-
-    if (error instanceof RemoteError) {
-      errorMessage = "Remote server error";
-    }
-
-    Map<String, Object> arguments = new HashMap<>();
-    arguments.put("error", errorMessage);
-
-    result.success(arguments);
+    result.success(Utils.errorToJson(error));
   }
 }
